@@ -1,3 +1,4 @@
+import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras.utils import *
 from tensorflow.keras.preprocessing.text import Tokenizer, text_to_word_sequence
@@ -58,7 +59,7 @@ def get_model1(lr,N,NUM_CHANNEL,NUM_CLASS):
     model = Model(image_input,logit)
     
     model.compile(loss=['categorical_crossentropy'],
-                      optimizer= SGD(learning_rate=lr),
+                      optimizer=tf.compat.v1.train.GradientDescentOptimizer(learning_rate=lr),
                       metrics=['acc'])
 
     return model
@@ -88,7 +89,7 @@ def get_model2(lr,N,NUM_CHANNEL,NUM_CLASS):
     model = Model(image_input,logit)
     
     model.compile(loss=['categorical_crossentropy'],
-                      optimizer= SGD(learning_rate=lr),
+                      optimizer=tf.compat.v1.train.GradientDescentOptimizer(learning_rate=lr),
                       metrics=['acc'])
 
     return model
@@ -98,3 +99,4 @@ def get_model(dataset,lr,N,NUM_CHANNEL,NUM_CLASS):
         return get_model1(lr,N,NUM_CHANNEL,NUM_CLASS)
     else:
         return get_model2(lr,N,NUM_CHANNEL,NUM_CLASS)
+

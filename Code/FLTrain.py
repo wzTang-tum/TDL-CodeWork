@@ -1,6 +1,11 @@
 import numpy as np
 from sklearn.cluster import KMeans
 
+# ========== NEW CODE: Gradient Collection ==========
+import os
+import json
+# ========== END NEW CODE ==========
+
 def computing_sigma(alpha,gamma,norm):
     delta = 10**(-8)
     epsilon = gamma - np.log(delta)/(alpha-1)
@@ -81,13 +86,23 @@ def RobustAggergation(mode,all_weights,old_weights):
     return agg_weights
 
 
-def FL(attack_mode,mode,user_num,model,taxic_clients,train_users,train_images,train_labels,sigma=0.1,delta=10,intre_epoch=5):
+def FL(attack_mode,mode,user_num,model,taxic_clients,train_users,train_images,train_labels,sigma=0.1,delta=10,intre_epoch=5, round_idx=None, total_epochs=None):
 
     user_indexs = np.random.permutation(len(train_users))[:user_num]
     
     old_weights = model.get_weights()
     flatten_old_weights = func_flatten_weights(old_weights)
     all_weights = []
+    
+    # ========== NEW CODE: Initialize gradient collection for last round ==========
+    is_last_round = (round_idx is not None) and (total_epochs is not None) and (round_idx == total_epochs - 1)
+    collected_gradients = {
+        "malicious": [],
+        "benign": [],
+        "selected": None
+    }
+    # ========== END NEW CODE ==========
+    
     f_possioned_gradients = []
     quotas = []
     for ui in range(len(user_indexs)):
@@ -103,6 +118,14 @@ def FL(attack_mode,mode,user_num,model,taxic_clients,train_users,train_images,tr
         weights = func_flatten_weights(weights)
         
         delta_weights = weights-flatten_old_weights
+        
+        # ========== NEW CODE: Collect gradient if last round ==========
+        if is_last_round:
+            if ui in taxic_clients:
+                collected_gradients["malicious"].append(delta_weights.copy())
+            else:
+                collected_gradients["benign"].append(delta_weights.copy())
+        # ========== END NEW CODE ==========
         
         if ui in taxic_clients:
             if attack_mode == 'AttackNaive':
@@ -127,4 +150,64 @@ def FL(attack_mode,mode,user_num,model,taxic_clients,train_users,train_images,tr
 
     all_weights = np.array(all_weights)
     weights = RobustAggergation(mode,all_weights,old_weights)    
+    
+    # ========== NEW CODE: Collect selected gradients from aggregation ==========
+    if is_last_round:
+        # Extract indices of selected gradients from aggregation
+        # (RobustDPFL uses KMeans clustering; we extract the selected cluster)
+        # Note: For simplicity, we're storing the aggregated gradient as "selected"
+        
+        # Convert to lists for JSON serialization - trim large gradients for visualization
+        MAX_GRADIENT_SIZE = 10000  # Keep first 10k elements per gradient for plotting
+        
+        json_data = {}
+        
+        # Process malicious gradients
+        if collected_gradients["malicious"]:
+            malicious_trimmed = []
+            for g in collected_gradients["malicious"]:
+                grad_list = g.tolist()
+                if len(grad_list) > MAX_GRADIENT_SIZE:
+                    grad_list = grad_list[:MAX_GRADIENT_SIZE]
+                malicious_trimmed.append(grad_list)
+            json_data["malicious"] = malicious_trimmed
+            json_data["malicious_count"] = len(collected_gradients["malicious"])
+        
+        # Process benign gradients
+        if collected_gradients["benign"]:
+            benign_trimmed = []
+            for g in collected_gradients["benign"]:
+                grad_list = g.tolist()
+                if len(grad_list) > MAX_GRADIENT_SIZE:
+                    grad_list = grad_list[:MAX_GRADIENT_SIZE]
+                benign_trimmed.append(grad_list)
+            json_data["benign"] = benign_trimmed
+            json_data["benign_count"] = len(collected_gradients["benign"])
+        
+        # Process selected gradient
+        selected_list = [g.tolist() if hasattr(g, 'tolist') else g for g in weights]
+        selected_trimmed = []
+        for g in selected_list:
+            if isinstance(g, list) and len(g) > MAX_GRADIENT_SIZE:
+                g = g[:MAX_GRADIENT_SIZE]
+            selected_trimmed.append(g)
+        json_data["selected"] = selected_trimmed
+        
+        # Create output directory if not exists
+        output_dir = "../Result/gradient_analysis"
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Save as JSON format
+        output_json = os.path.join(output_dir, "gradients_last_round.json")
+        
+        with open(output_json, 'w') as f:
+            json.dump(json_data, f)
+        
+        print(f"[GRADIENT COLLECTION] Saved gradients to {output_json}")
+        print(f"[GRADIENT COLLECTION] Malicious clients: {json_data.get('malicious_count', 0)}, Benign clients: {json_data.get('benign_count', 0)}")
+        print(f"[GRADIENT COLLECTION] Trimmed each gradient to first {MAX_GRADIENT_SIZE} elements for visualization")
+    # ========== END NEW CODE ==========
+    
     model.set_weights(weights)
+
+

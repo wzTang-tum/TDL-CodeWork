@@ -50,8 +50,8 @@ def main(dataset,attack_mode,defense_mode,taxic_ratio,alpha,epsilon,gpu):
     train_images, train_labels, taxic_clients = posison_data(taxic_ratio,trigger,train_users,train_images,train_labels)
     trigger_test_images, trigger_test_labels = build_posison_eval_data(trigger,test_images,test_labels)
 
-    lr = 0.05
-    user_num = 150
+    lr = 0.01
+    user_num = 100
     ckpt = 5
 
     norm = 3
@@ -60,7 +60,7 @@ def main(dataset,attack_mode,defense_mode,taxic_ratio,alpha,epsilon,gpu):
     model = get_model(dataset,lr,train_images.shape[1],NUM_CHANNEL,NUM_CLASS)
     Res = []
     for i in range(EPOCH):
-        FL(attack_mode,defense_mode,user_num,model,taxic_clients,train_users,train_images,train_labels,sigma,norm)
+        FL(attack_mode,defense_mode,user_num,model,taxic_clients,train_users,train_images,train_labels,sigma,norm, round_idx=i, total_epochs=EPOCH)
 
         if i%ckpt==0:
             pred = model.predict(test_images).argmax(axis=-1)
