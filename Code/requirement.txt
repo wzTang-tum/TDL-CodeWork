@@ -4,3 +4,4 @@ keras == 2.2.4
 numpy
 click
 emnist
+scipy

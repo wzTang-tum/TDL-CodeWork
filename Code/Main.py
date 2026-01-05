@@ -44,16 +44,22 @@ def main(dataset,attack_mode,defense_mode,taxic_ratio,alpha,epsilon,gpu):
     EPOCH = {'MNIST':50,'FEMNIST':100,'CIFAR10':50}[dataset]
 
     train_images, train_labels, test_images, test_labels, NUM_CHANNEL, NUM_CLASS = load_data(dataset)
-    train_users = client_partation(train_labels,local_data_size)
+    num_clients = int(np.ceil(len(train_labels) / local_data_size))
+    
+    # To use simple IID partitioning, replace with:
+    #train_users = client_partation(train_labels,local_data_size)
+    # To use simple non-IID partitioning, replace with:
+    train_users = client_partition_mild_noniid(train_labels, num_clients=100, extra_class_fraction=0.1)
 
     trigger = TriggerGenerator(3,25,25,255,0,NUM_CHANNEL,NUM_CLASS)
     train_images, train_labels, taxic_clients = posison_data(taxic_ratio,trigger,train_users,train_images,train_labels)
     trigger_test_images, trigger_test_labels = build_posison_eval_data(trigger,test_images,test_labels)
 
-    lr = 0.01
+    lr = 0.1
     user_num = 100
     ckpt = 5
 
+    #norm = 3
     norm = 3
     sigma = computing_sigma(alpha,epsilon,norm)
 

@@ -59,7 +59,7 @@ def get_model1(lr,N,NUM_CHANNEL,NUM_CLASS):
     model = Model(image_input,logit)
     
     model.compile(loss=['categorical_crossentropy'],
-                      optimizer=tf.compat.v1.train.GradientDescentOptimizer(learning_rate=lr),
+                      optimizer=tf.keras.optimizers.SGD(learning_rate=lr),
                       metrics=['acc'])
 
     return model
@@ -89,7 +89,7 @@ def get_model2(lr,N,NUM_CHANNEL,NUM_CLASS):
     model = Model(image_input,logit)
     
     model.compile(loss=['categorical_crossentropy'],
-                      optimizer=tf.compat.v1.train.GradientDescentOptimizer(learning_rate=lr),
+                      optimizer=tf.keras.optimizers.SGD(learning_rate=lr),
                       metrics=['acc'])
 
     return model
