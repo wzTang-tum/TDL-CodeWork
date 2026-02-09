@@ -187,3 +187,30 @@ def dump_result(Res,dataset,attack_mode,defense_mode,taxic_ratio,alpha,epsilon):
     with open('../Result/'+Key+'.json','a') as f:
         s = json.dumps(Res) + '\n'
         f.write(s)
+
+def client_partition_dirichlet(train_labels, num_clients, alpha):
+    if train_labels.ndim == 2:
+        train_labels = np.argmax(train_labels, axis=1)
+
+    n_classes = len(np.unique(train_labels))
+    train_users = {}
+    min_size = 0
+    N = len(train_labels)
+
+    while min_size < 10:
+        idx_batch = [[] for _ in range(num_clients)]
+        for k in range(n_classes):
+            idx_k = np.where(train_labels == k)[0]
+            np.random.shuffle(idx_k)
+            proportions = np.random.dirichlet(np.repeat(alpha, num_clients))
+            proportions = np.array([p * (len(idx_j) < N / num_clients) for p, idx_j in zip(proportions, idx_batch)])
+            proportions = proportions / proportions.sum()
+            proportions = (np.cumsum(proportions) * len(idx_k)).astype(int)[:-1]
+            idx_batch = [idx_j + idx.tolist() for idx_j, idx in zip(idx_batch, np.split(idx_k, proportions))]
+        
+        min_size = min([len(idx_j) for idx_j in idx_batch])
+
+    for i in range(num_clients):
+        train_users[i] = np.array(idx_batch[i])
+
+    return train_users

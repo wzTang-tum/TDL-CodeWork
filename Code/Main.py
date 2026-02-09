@@ -22,9 +22,10 @@ import click
 @click.option('-m', '--defense-mode', default='RobustDPFL')
 @click.option('-t', '--taxic-ratio', default=0.1)
 @click.option('-o', '--alpha', default=1.2)
+@click.option('--dirichlet-alpha', default=0.5)
 @click.option('-e', '--epsilon', default=5)
 @click.option('-g', '--gpu', default=0)
-def main(dataset,attack_mode,defense_mode,taxic_ratio,alpha,epsilon,gpu):
+def main(dataset,attack_mode,defense_mode,taxic_ratio,alpha,dirichlet_alpha,epsilon,gpu):
 
     # If gpu is negative or empty, do not set CUDA_VISIBLE_DEVICES (use CPU)
     try:
@@ -49,7 +50,7 @@ def main(dataset,attack_mode,defense_mode,taxic_ratio,alpha,epsilon,gpu):
     # To use simple IID partitioning, replace with:
     #train_users = client_partation(train_labels,local_data_size)
     # To use simple non-IID partitioning, replace with:
-    train_users = client_partition_mild_noniid(train_labels, num_clients=100, extra_class_fraction=0.1)
+    train_users = client_partition_dirichlet(train_labels, num_clients=100, alpha=dirichlet_alpha)
 
     trigger = TriggerGenerator(3,25,25,255,0,NUM_CHANNEL,NUM_CLASS)
     train_images, train_labels, taxic_clients = posison_data(taxic_ratio,trigger,train_users,train_images,train_labels)

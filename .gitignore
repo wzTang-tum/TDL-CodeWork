@@ -94,3 +94,11 @@ pip-log.txt
 requirements.txt
 
 tempCodeRunnerFile.py
+
+# Project specific ignores
+Data/
+Result/
+plot_*.py
+create_gradient_visualization.py
+tempCodeRunnerFile.py
+test_load.py
