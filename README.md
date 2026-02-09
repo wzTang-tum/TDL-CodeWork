@@ -2,6 +2,8 @@
 
 This repository implements a simulation framework for **Robust and Differentially Private Federated Learning (Robust-DPFL)**. It investigates the performance of Federated Learning (FL) systems under the dual challenges of **data poisoning attacks** and **privacy constraints** (using Differential Privacy).
 
+> **Note:** This project serves as a research report and study based on the paper **"Towards the Robustness of Differentially Private Federated Learning"**. The codebase is built upon and improves the open-source implementation provided by the original authors.
+
 The project simulates a scenario where a fraction of clients are malicious (performing backdoor attacks) while the central server or clients apply defense mechanisms and differential privacy noise to protect user data.
 
 ## 📂 Code Structure
